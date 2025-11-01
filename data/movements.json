@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "producto_id": 4,
+    "tipo": "salida",
+    "cantidad": 1,
+    "stock_anterior": 173,
+    "stock_actual": 172,
+    "usuario": "Juan",
+    "fecha": "2025-11-01T05:45:45.949Z",
+    "producto_codigo": "PROD-004",
+    "producto_nombre": "Grapas 71/6-C",
+    "punto_reorden": 50,
+    "solicitar_activado": false
+  }
+]

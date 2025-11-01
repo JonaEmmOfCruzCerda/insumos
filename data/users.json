@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "usuario": "Juan",
+    "password": "$2b$10$9W.ZHmz3mPbZqkBQxC.gP..qS2a.mvT2tY2EeEFeTm0A8EI0jKg4O",
+    "tipo": "admin",
+    "fecha_creacion": "2025-10-29T21:06:51.648Z"
+  },
+  {
+    "id": 2,
+    "usuario": "Operador",
+    "password": "$2b$10$lZjSGy9xnouxJWYYiLSj9uV6YWG1j7MTPIAPUjxwZ66pwmr8P8VBG",
+    "tipo": "operador",
+    "fecha_creacion": "2025-11-01T04:44:12.036Z"
+  }
+]
