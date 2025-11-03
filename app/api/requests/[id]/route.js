@@ -1,9 +1,10 @@
 import { readData, writeData } from '@/lib/data';
 import { verifyToken } from '@/lib/auth';
 
-// PUT - Actualizar solicitud (aprobar/rechazar)
+// PUT - Actualizar solicitud (aprobación/rechazo)
 export async function PUT(request, { params }) {
   try {
+    // ✅ CORREGIDO: await params
     const { id } = await params;
     
     const authHeader = request.headers.get('authorization');
@@ -19,9 +20,11 @@ export async function PUT(request, { params }) {
     }
 
     const updateData = await request.json();
-    const requests = readData('requests.json');
-    const requestIndex = requests.findIndex(req => req.id === parseInt(id));
-
+    
+    // Leer solicitudes
+    const requests = readData('requests.json') || [];
+    const requestIndex = requests.findIndex(r => r.id === parseInt(id));
+    
     if (requestIndex === -1) {
       return Response.json({ error: 'Solicitud no encontrada' }, { status: 404 });
     }
@@ -41,6 +44,7 @@ export async function PUT(request, { params }) {
     });
 
   } catch (error) {
+    console.error('Error en PUT /api/requests/[id]:', error);
     return Response.json(
       { error: 'Error al actualizar solicitud' },
       { status: 500 }

@@ -1,14 +1,1 @@
-[
-  {
-    "id": 1,
-    "producto_id": 7,
-    "producto_codigo": "PROD-007",
-    "producto_nombre": "GRAPA FIFA",
-    "operador": "Operador",
-    "estado": "rechazada",
-    "fecha_solicitud": "2025-11-01T16:07:42.031Z",
-    "fecha_respuesta": "2025-11-03T15:08:33.673Z",
-    "administrador": "Juan",
-    "observaciones": "Solicitud rechazada por el administrador"
-  }
-]
+[]

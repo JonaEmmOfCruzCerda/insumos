@@ -101,10 +101,10 @@ export default function AdminDashboard() {
         await loadProducts(); // Recargar productos para ver el stock actualizado
         
         const result = await response.json();
-        setError(`✅ ${result.message}`);
+        setError(`${result.message}`);
       } else {
         const errorData = await response.json();
-        setError(`❌ ${errorData.error}`);
+        setError(`${errorData.error}`);
       }
     } catch (error) {
       setError('Error de conexión al guardar movimiento');
@@ -232,55 +232,100 @@ export default function AdminDashboard() {
   const handleShowAlerts = () => {
     setShowAlertModal(true);
   };
-  
-  const handleApproveRequest = async (request, cantidad) => {
-    try {
-      const token = localStorage.getItem('token');
-      const userData = JSON.parse(localStorage.getItem('user'));
-      
-      // 1. Actualizar la solicitud
-      const updateResponse = await fetch(`/api/requests/${request.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          estado: 'aprobada',
-          administrador: userData.usuario,
-          observaciones: `Aprobada - Entregadas ${cantidad} unidades`
-        }),
-      });
 
-      if (!updateResponse.ok) {
-        throw new Error('Error al actualizar solicitud');
-      }
+// En el Dashboard Admin - función para aprobar solicitud y descontar stock
+const handleApproveRequest = async (solicitud, cantidadAprobada, observacionesAdmin) => {
+  try {
+    const token = localStorage.getItem('token');
+    const userData = JSON.parse(localStorage.getItem('user'));
 
-      // 2. Registrar movimiento de salida
-      const movementResponse = await fetch('/api/movements', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          producto_id: request.producto_id,
-          tipo: 'salida',
-          cantidad: cantidad,
-          observaciones: `Solicitud aprobada - Operador: ${request.operador}`
-        }),
-      });
+    console.log('Procesando aprobación:', {
+      solicitud_id: solicitud.id,
+      producto_id: solicitud.producto_id,
+      cantidad_aprobada: cantidadAprobada
+    });
 
-      if (!movementResponse.ok) {
-        throw new Error('Error al registrar movimiento');
-      }
-
-      setError(`✅ Solicitud aprobada - ${cantidad} unidades entregadas`);
-      
-    } catch (error) {
-      setError(`❌ Error: ${error.message}`);
+    // 1. Primero obtener el producto actual para ver el stock anterior
+    console.log('Buscando producto con ID:', solicitud.producto_id);
+    const productResponse = await fetch(`/api/products/${solicitud.producto_id}`);
+    
+    if (!productResponse.ok) {
+      const errorData = await productResponse.json();
+      throw new Error(`Error al obtener producto: ${errorData.error || 'Producto no encontrado'}`);
     }
-  };
+
+    const productoActual = await productResponse.json();
+    console.log('Producto encontrado:', productoActual);
+    
+    const stockAnterior = productoActual.stock;
+
+    // 2. Actualizar el stock del producto (restar la cantidad aprobada)
+    const updateStockResponse = await fetch(`/api/products/${solicitud.producto_id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        operacion: 'salida',
+        cantidad: cantidadAprobada,
+        observaciones: observacionesAdmin || `Solicitud aprobada - ID: ${solicitud.id}`
+      }),
+    });
+
+    if (!updateStockResponse.ok) {
+      const errorData = await updateStockResponse.json();
+      throw new Error(errorData.error || 'Error al actualizar stock');
+    }
+
+    const productoActualizado = await updateStockResponse.json();
+
+    // 3. Actualizar el estado de la solicitud
+    const updateRequestResponse = await fetch(`/api/requests/${solicitud.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        estado: 'aprobada',
+        cantidad_aprobada: cantidadAprobada,
+        administrador: userData.usuario,
+        observaciones_admin: observacionesAdmin,
+        fecha_aprobacion: new Date().toISOString()
+      }),
+    });
+
+    if (!updateRequestResponse.ok) {
+      throw new Error('Error al actualizar la solicitud');
+    }
+
+    // 4. Mostrar mensaje de éxito con información del stock
+    let mensaje = `Salida registrada con éxito\n\n` +
+                 `Producto: ${solicitud.producto_nombre}\n` +
+                 `Código: ${solicitud.producto_codigo}\n` +
+                 `Cantidad entregada: ${cantidadAprobada}\n` +
+                 `Stock anterior: ${stockAnterior}\n` +
+                 `Stock actual: ${productoActualizado.stock_actual || productoActualizado.stock}`;
+
+    // 5. Verificar punto de reorden
+    const puntoReorden = productoActualizado.punto_reorden || 2;
+    const stockActual = productoActualizado.stock_actual || productoActualizado.stock;
+    
+    if (stockActual <= puntoReorden) {
+      mensaje += `\n\n⚠️ ALERTA: El producto está en o por debajo del punto de reorden (${puntoReorden}).\n¡Es necesario solicitar más inventario!`;
+    }
+
+    alert(mensaje);
+    
+    // 6. Recargar datos
+    await loadProducts();
+
+  } catch (error) {
+    console.error('Error al procesar la solicitud:', error);
+    alert(`Error: ${error.message}`);
+  }
+};
 
   if (!user) {
     return (

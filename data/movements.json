@@ -12,5 +12,31 @@
     "producto_nombre": "Grapas 71/6-C",
     "punto_reorden": 50,
     "solicitar_activado": false
+  },
+  {
+    "id": 2,
+    "producto_id": 345,
+    "producto_codigo": "PROD-345",
+    "producto_nombre": "Prueba",
+    "tipo": "salida",
+    "cantidad": 1,
+    "stock_anterior": 10,
+    "stock_actual": 9,
+    "observaciones": "Solicitud aprobada - ID: 1",
+    "usuario": "Juan",
+    "fecha": "2025-11-03T16:30:53.774Z"
+  },
+  {
+    "id": 3,
+    "producto_id": 345,
+    "producto_codigo": "PROD-345",
+    "producto_nombre": "Prueba",
+    "tipo": "salida",
+    "cantidad": 5,
+    "stock_anterior": 9,
+    "stock_actual": 4,
+    "observaciones": "Solicitud aprobada - ID: 2",
+    "usuario": "Juan",
+    "fecha": "2025-11-03T16:53:32.296Z"
   }
 ]

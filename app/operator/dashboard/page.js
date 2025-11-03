@@ -58,36 +58,97 @@ export default function OperatorDashboard() {
     setShowRequestModal(true);
   };
 
-  const handleSubmitRequest = async (productCode) => {
+  const handleCancelRequest = () => {
+    setShowRequestModal(false);
+  };
+
+  // ✅ ESTA ES LA FUNCIÓN CORRECTA
+  const handleSaveRequest = async (solicitudData) => {
     try {
       const token = localStorage.getItem('token');
+      const userData = JSON.parse(localStorage.getItem('user'));
+
+      console.log('🔄 ===== INICIO handleSaveRequest =====');
+      console.log('📦 solicitudData recibida del modal:', solicitudData);
+
+      // Extraer datos correctamente del modal
+      const codigoBuscado = solicitudData.codigo;
+      const cantidadSolicitada = solicitudData.cantidad;
+      const observaciones = solicitudData.observaciones || '';
+
+      console.log('📋 Datos extraídos del modal:', {
+        codigoBuscado,
+        cantidadSolicitada, 
+        observaciones
+      });
+
+      // Validaciones
+      if (!codigoBuscado) {
+        alert('Por favor ingresa un código de producto válido');
+        return;
+      }
+
+      if (!cantidadSolicitada || cantidadSolicitada <= 0) {
+        alert('La cantidad debe ser mayor a 0');
+        return;
+      }
+
+      console.log('🔍 Buscando producto con código:', codigoBuscado);
+
+      // Buscar producto
+      const searchResponse = await fetch(`/api/products?codigo=${encodeURIComponent(codigoBuscado)}`);
+      
+      if (!searchResponse.ok) {
+        alert('❌ Error al buscar producto en el servidor');
+        return;
+      }
+
+      const productosEncontrados = await searchResponse.json();
+      console.log('📦 Resultado de búsqueda:', productosEncontrados);
+
+      if (!Array.isArray(productosEncontrados) || productosEncontrados.length === 0) {
+        alert(`❌ Producto no encontrado. Código: ${codigoBuscado}`);
+        return;
+      }
+
+      const producto = productosEncontrados[0];
+      console.log('✅ Producto encontrado:', producto);
+
+      // ✅ Estructura CORRECTA para el backend
+      const requestData = {
+        producto_codigo: producto.codigo,
+        cantidad_solicitada: Number(cantidadSolicitada),
+        observaciones: observaciones,
+        operador: userData.usuario
+      };
+
+      console.log('📤 Enviando al backend (ESTRUCTURA CORREGIDA):', requestData);
+
       const response = await fetch('/api/requests', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          producto_codigo: productCode,
-          operador: user.usuario
-        }),
+        body: JSON.stringify(requestData),
       });
 
+      const responseData = await response.json();
+
       if (response.ok) {
+        setSuccess(`✅ Solicitud enviada correctamente por ${cantidadSolicitada} unidades`);
         setShowRequestModal(false);
-        setSuccess('✅ Solicitud enviada correctamente al administrador');
         setTimeout(() => setSuccess(''), 5000);
       } else {
-        const errorData = await response.json();
-        setError(`❌ ${errorData.error}`);
+        setError(`❌ Error: ${responseData.error}`);
+        setTimeout(() => setError(''), 5000);
       }
-    } catch (error) {
-      setError('Error de conexión al enviar solicitud');
-    }
-  };
 
-  const handleCancelRequest = () => {
-    setShowRequestModal(false);
+    } catch (error) {
+      console.error('❌ Error completo en handleSaveRequest:', error);
+      setError('❌ Error de conexión al enviar solicitud');
+      setTimeout(() => setError(''), 5000);
+    }
   };
 
   if (!user) {
@@ -130,7 +191,6 @@ export default function OperatorDashboard() {
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          {/* Mensajes de éxito y error */}
           {success && (
             <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
               {success}
@@ -143,7 +203,6 @@ export default function OperatorDashboard() {
             </div>
           )}
 
-          {/* Sección de Productos */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-gray-800">
@@ -171,10 +230,10 @@ export default function OperatorDashboard() {
         </div>
       </main>
 
-      {/* Modal para solicitar producto */}
+      {/* ✅ CORREGIDO: Usa handleSaveRequest en lugar de handleSubmitRequest */}
       {showRequestModal && (
         <RequestProductModal 
-          onSave={handleSubmitRequest}
+          onSave={handleSaveRequest}
           onCancel={handleCancelRequest}
         />
       )}

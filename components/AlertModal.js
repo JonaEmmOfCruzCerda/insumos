@@ -9,22 +9,33 @@ export default function AlertModal({ onClose, onApproveRequest }) {
   const [showApproveModal, setShowApproveModal] = useState(false);
 
   useEffect(() => {
+    console.log('AlertModal montado - cargando solicitudes...');
     loadPendingRequests();
   }, []);
 
   const loadPendingRequests = async () => {
     try {
       const token = localStorage.getItem('token');
+      console.log('Cargando solicitudes pendientes...');
+      
       const response = await fetch('/api/requests', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
 
+      console.log('Respuesta del servidor:', response.status);
+      
       if (response.ok) {
         const allRequests = await response.json();
+        console.log('Todas las solicitudes recibidas:', allRequests);
+        
         const pendingRequests = allRequests.filter(req => req.estado === 'pendiente');
+        console.log('Solicitudes pendientes filtradas:', pendingRequests);
+        
         setRequests(pendingRequests);
+      } else {
+        console.error('Error al cargar solicitudes:', response.status);
       }
     } catch (error) {
       console.error('Error cargando solicitudes:', error);
@@ -34,18 +45,21 @@ export default function AlertModal({ onClose, onApproveRequest }) {
   };
 
   const handleApproveClick = (request) => {
+    console.log('Aprobando solicitud:', request);
     setSelectedRequest(request);
     setShowApproveModal(true);
   };
 
-  const handleConfirmApprove = async (cantidad) => {
+  const handleConfirmApprove = async (cantidad, observaciones) => {
     try {
-      await onApproveRequest(selectedRequest, cantidad);
+      console.log('Confirmando aprobación:', { cantidad, observaciones });
+      await onApproveRequest(selectedRequest, cantidad, observaciones);
       setShowApproveModal(false);
       setSelectedRequest(null);
       await loadPendingRequests(); // Recargar lista
     } catch (error) {
       console.error('Error aprobando solicitud:', error);
+      alert('Error al aprobar la solicitud: ' + error.message);
     }
   };
 
@@ -57,6 +71,8 @@ export default function AlertModal({ onClose, onApproveRequest }) {
     try {
       const token = localStorage.getItem('token');
       const userData = JSON.parse(localStorage.getItem('user'));
+      
+      console.log('Rechazando solicitud ID:', requestId);
       
       const response = await fetch(`/api/requests/${requestId}`, {
         method: 'PUT',
@@ -72,12 +88,16 @@ export default function AlertModal({ onClose, onApproveRequest }) {
       });
 
       if (response.ok) {
+        console.log('Solicitud rechazada exitosamente');
         await loadPendingRequests(); // Recargar lista
+        alert('Solicitud rechazada correctamente');
       } else {
-        alert('Error al rechazar la solicitud');
+        const errorData = await response.json();
+        alert(`Error al rechazar la solicitud: ${errorData.error}`);
       }
     } catch (error) {
-      alert('Error de conexión');
+      console.error('Error rechazando solicitud:', error);
+      alert('Error de conexión al rechazar solicitud');
     }
   };
 
@@ -91,17 +111,30 @@ export default function AlertModal({ onClose, onApproveRequest }) {
     });
   };
 
+  console.log('Estado actual del AlertModal:', {
+    loading,
+    requestsCount: requests.length,
+    requests: requests,
+    showApproveModal,
+    selectedRequest
+  });
+
   return (
-    <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto">
+    <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-start justify-center p-4 z-50 overflow-y-auto">
       {/* Overlay para cerrar */}
       <div className="fixed inset-0" onClick={onClose}></div>
       
       {/* Modal principal */}
       <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl mt-20 transform transition-all duration-300 ease-out scale-100 opacity-100">
         <div className="px-6 py-4 border-b flex justify-between items-center">
-          <h3 className="text-lg font-semibold text-gray-900">
-            Alertas y Solicitudes Pendientes
-          </h3>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Alertas y Solicitudes Pendientes
+            </h3>
+            <p className="text-sm text-gray-500 mt-1">
+              {requests.length} solicitud(es) pendiente(s)
+            </p>
+          </div>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -127,12 +160,13 @@ export default function AlertModal({ onClose, onApproveRequest }) {
             </div>
           ) : (
             <div className="space-y-4">
+              
               {requests.map((request) => (
-                <div key={request.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                <div key={request.id} className="border border-yellow-200 rounded-lg p-4 bg-yellow-50 hover:bg-yellow-100 transition-colors">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <div className="flex items-center space-x-3 mb-2">
-                        <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
+                        <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full border border-yellow-300">
                           PENDIENTE
                         </span>
                         <span className="text-sm text-gray-500">
@@ -140,29 +174,39 @@ export default function AlertModal({ onClose, onApproveRequest }) {
                         </span>
                       </div>
                       
-                      <h4 className="font-semibold text-gray-900">
+                      <h4 className="font-semibold text-gray-900 text-lg">
                         {request.producto_nombre}
                       </h4>
-                      <p className="text-sm text-gray-600">
-                        <strong>Código:</strong> {request.producto_codigo}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        <strong>Solicitado por:</strong> {request.operador}
-                      </p>
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        <p className="text-sm text-gray-600">
+                          <strong>Código:</strong> {request.producto_codigo}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          <strong>Cantidad solicitada:</strong> {request.cantidad_solicitada}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          <strong>Solicitante:</strong> {request.operador}
+                        </p>
+                        {request.observaciones && (
+                          <p className="text-sm text-gray-600 col-span-2">
+                            <strong>Observaciones:</strong> {request.observaciones}
+                          </p>
+                        )}
+                      </div>
                     </div>
                     
-                    <div className="flex space-x-2">
+                    <div className="flex space-x-2 ml-4">
                       <button
                         onClick={() => handleApproveClick(request)}
-                        className="px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors"
+                        className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors flex items-center space-x-1"
                       >
-                        Aprobar
+                        <span>Aprobar</span>
                       </button>
                       <button
                         onClick={() => handleReject(request.id)}
-                        className="px-3 py-1 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors"
+                        className="px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors flex items-center space-x-1"
                       >
-                        Rechazar
+                        <span>Rechazar</span>
                       </button>
                     </div>
                   </div>
