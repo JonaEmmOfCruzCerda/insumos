@@ -2,29 +2,28 @@ import { readData } from '@/lib/data';
 
 export async function GET(request) {
   try {
+    console.log('🔍 Iniciando GET /api/products');
+    
     const { searchParams } = new URL(request.url);
     const codigo = searchParams.get('codigo');
     
-    const products = readData('products.json');
-    
-    console.log('🔍 Búsqueda de producto con código:', codigo);
-    console.log('📊 Productos disponibles:', products.map(p => p.codigo));
-    
+    console.log('📋 Parámetros de búsqueda:', { codigo });
+
+    // Leer productos
+    const products = await readData('products.json');
+    console.log('📦 Productos cargados:', products.length);
+
     // Si se proporciona un código, filtrar por él
     if (codigo) {
+      console.log('🔍 Buscando producto con código:', codigo);
       const producto = products.find(p => {
         if (!p.codigo) return false;
-        
-        // Comparación case-insensitive y sin espacios
         const codigoProducto = p.codigo.toString().toUpperCase().trim();
         const codigoBusqueda = codigo.toUpperCase().trim();
-        
-        console.log('Comparando:', codigoProducto, 'con', codigoBusqueda);
-        
         return codigoProducto === codigoBusqueda;
       });
       
-      console.log('🎯 Producto encontrado:', producto ? 'SÍ' : 'NO');
+      console.log('🎯 Resultado de búsqueda:', producto ? 'Encontrado' : 'No encontrado');
       
       if (!producto) {
         return Response.json([], { status: 200 });
@@ -33,11 +32,20 @@ export async function GET(request) {
     }
     
     // Si no hay código, devolver todos los productos
+    console.log('✅ Devolviendo todos los productos:', products.length);
     return Response.json(products);
+
   } catch (error) {
-    console.error('❌ Error en GET /api/products:', error);
+    console.error('❌ ERROR en GET /api/products:', error);
+    console.error('📝 Stack trace:', error.stack);
+    
     return Response.json(
-      { error: 'Error al obtener productos' },
+      { 
+        error: 'Error interno del servidor',
+        message: error.message,
+        // Solo en desarrollo mostrar detalles
+        ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
+      },
       { status: 500 }
     );
   }
