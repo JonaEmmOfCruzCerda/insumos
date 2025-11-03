@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
-export default function RegisterForm() {
+export default function RegisterForm(onCancel) {
   const [formData, setFormData] = useState({
     usuario: '',
     password: '',
@@ -71,6 +71,7 @@ export default function RegisterForm() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-500 to-green-800 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 bg-white p-6">
+        
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-green-600">
             Crear nueva cuenta
@@ -163,19 +164,13 @@ export default function RegisterForm() {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group m-2 relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Registrando...' : 'Registrarse'}
             </button>
-          </div>
 
-          <div className="text-center">
-            <Link 
-              href="/" 
-              className="font-medium text-green-600 hover:text-green-500"
-            >
-              ¿Ya tienes cuenta? Inicia sesión aquí
-            </Link>
+            <Link href={'/admin/dashboard'} className="group m-2 relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-gray-300 hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >Cancelar</Link>
           </div>
         </form>
       </div>

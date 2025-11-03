@@ -113,15 +113,6 @@ export default function LoginForm() {
               {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
             </button>
           </div>
-
-          <div className="text-center">
-            <Link 
-              href="/register" 
-              className="font-medium text-blue-600 hover:text-blue-500"
-            >
-              ¿No tienes cuenta? Regístrate aquí
-            </Link>
-          </div>
         </form>
       </div>
     </div>
