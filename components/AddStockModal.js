@@ -12,25 +12,65 @@ export default function AddStockModal({ product, onSave, onCancel }) {
     }
   }, [product]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    if (cantidad <= 0) {
-      alert('La cantidad debe ser mayor a 0');
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  if (cantidad <= 0) {
+    alert('La cantidad debe ser mayor a 0');
+    return;
+  }
+
+  if (tipoMovimiento === 'salida' && cantidad > product.stock) {
+    alert('No hay suficiente stock para realizar esta salida');
+    return;
+  }
+
+  try {
+    // 🔐 Obtener token JWT del almacenamiento local
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('No hay token de autenticación. Inicia sesión nuevamente.');
       return;
     }
 
-    if (tipoMovimiento === 'salida' && cantidad > product.stock) {
-      alert('No hay suficiente stock para realizar esta salida');
-      return;
-    }
+    // 🧾 Construir payload de la operación
+    const payload = {
+      operacion: tipoMovimiento,
+      cantidad: parseInt(cantidad),
+      observaciones: `Movimiento manual de ${tipoMovimiento}`,
+    };
 
-    onSave({
-      producto_id: product.id,
-      tipo: tipoMovimiento,
-      cantidad: parseInt(cantidad)
+    // 🚀 Llamada a la API con token en el header
+    const res = await fetch(`/api/products/${product.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
     });
-  };
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error('❌ Error en la API:', data.error);
+      alert(data.error || 'Error al actualizar producto');
+      return;
+    }
+
+    // ✅ Mostrar mensaje de confirmación
+    alert(data.message || 'Movimiento registrado correctamente');
+
+    // 🔄 Actualizar el producto en la vista local
+    onSave({
+      ...product,
+      stock: data.stock_actual,
+    });
+  } catch (error) {
+    console.error('Error en handleSubmit:', error);
+    alert('Error al guardar los cambios. Revisa la consola.');
+  }
+};
 
   const calcularNuevoStock = () => {
     if (tipoMovimiento === 'entrada') {
