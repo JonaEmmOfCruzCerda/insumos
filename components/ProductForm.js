@@ -80,21 +80,21 @@ export default function ProductForm({ product, onSave, onCancel }) {
   };
 
   const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    // Para nuevo producto, no enviar el campo código (se genera en backend)
-    const dataToSend = product 
-      ? formData // Edición: enviar todos los datos
-      : { // Nuevo: no enviar código (se genera automáticamente)
-          producto: formData.producto,
-          descripcion: formData.descripcion,
-          observaciones: formData.observaciones,
-          punto_reorden: formData.punto_reorden,
-          stock: formData.stock
-        };
-    
-    onSave(dataToSend);
-  };
+  e.preventDefault();
+  
+  const dataToSend = product 
+    ? formData
+    : {
+        codigo: formData.codigo, // 👈 AÑADIR ESTO
+        producto: formData.producto,
+        descripcion: formData.descripcion,
+        observaciones: formData.observaciones,
+        punto_reorden: formData.punto_reorden,
+        stock: formData.stock
+      };
+  
+  onSave(dataToSend);
+};
 
   if (loading && !product) {
     return (
